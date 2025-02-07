@@ -105,7 +105,11 @@ export async function resolveArns(text: string) {
 export async function getAllRecords() {
   const result = await arIoCu.dryrun({
     process: import.meta.env.VITE_ARNS_AR_IO_REGISTRY,
-    tags: [{ name: "Action", value: "Records" }],
+     // NOTE: smaller page sizes are recommended
+    tags: [
+      { name: "Action", value: "Records" }, 
+      { name: 'Limit', value: "10000"}
+    ],
   })
 
   try {
@@ -113,12 +117,12 @@ export async function getAllRecords() {
       throw new Error(`No response from (get) Records`)
     }
 
-    const recordsMap = JSON.parse(result.Messages[0].Data) as Record<
-      string,
-      Omit<ArnsRecord, "name">
-    >
-
-    return recordsMap
+    const recordsArray = JSON.parse(result.Messages[0].Data).items as ArnsRecord[];
+    const recordsMap = recordsArray.reduce((acc: Record<string, ArnsRecord>, record) => {
+      acc[record.name] = record
+      return acc
+    }, {});
+    return recordsMap;
   } catch (err) {
     console.error(err)
     return []

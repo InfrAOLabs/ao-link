@@ -3,7 +3,7 @@ import { connect } from "@permaweb/aoconnect/browser"
 import { isArweaveId } from "@/utils/utils"
 
 const arIoCu = connect({
-  CU_URL: "https://cu.ar-io.dev",
+  CU_URL: "https://cu.ardrive.io",
 })
 
 export async function getOwnedDomains(entityId: string): Promise<string[]> {

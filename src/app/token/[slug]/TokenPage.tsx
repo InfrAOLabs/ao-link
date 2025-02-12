@@ -1,5 +1,17 @@
-import { Avatar, Box, Paper, Skeleton, Stack, Tab, Tabs, Tooltip, Typography } from "@mui/material"
+import {
+  Avatar,
+  Box,
+  Button,
+  Paper,
+  Skeleton,
+  Stack,
+  Tab,
+  Tabs,
+  Tooltip,
+  Typography,
+} from "@mui/material"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
+import { ArrowSquareOut } from "@phosphor-icons/react"
 import React, { useEffect, useMemo, useState } from "react"
 import { useParams, useSearchParams } from "react-router-dom"
 
@@ -110,6 +122,24 @@ export default function TokenPage() {
         <Tabs value={activeTab} onChange={handleChange} textColor="primary">
           <Tab value="table" label="Token Holders Table" />
           <Tab value="chart" label="Token Holders Chart" />
+          <Button
+            href={`https://dexi.defi.ao/#/token/${tokenId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              gap: 0.5,
+              display: "flex",
+              alignItems: "center",
+              flexDirection: "row",
+              fontSize: "0.875rem",
+              textTransform: "none",
+              color: "var(--mui-palette-text-secondary)",
+            }}
+            color="secondary"
+          >
+            View on Dexi
+            <ArrowSquareOut />
+          </Button>
         </Tabs>
         <Box sx={{ marginX: -2 }}>
           {tokenHolders === undefined || !tokenInfo ? (

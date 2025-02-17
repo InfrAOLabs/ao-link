@@ -94,3 +94,7 @@ html[data-mui-color-scheme="dark"] .table-row:hover {
 body * {
   scrollbar-width: thin;
 }
+
+body .a1osnke6 > div:not(:nth-child(1)) {
+  display: none;
+}

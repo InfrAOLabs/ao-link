@@ -4,6 +4,8 @@ import { goldsky } from "./graphql-client"
 import { ArweaveBlock, BlocksResponse } from "@/types"
 import { parseArweaveBlock } from "@/utils/arweave-utils"
 
+const AO_NETWORK_IDENTIFIER = '{ name: "Data-Protocol", values: ["ao"] }'
+
 const blocksQuery = gql`
   query ($limit: Int!, $sortOrder: SortOrder!, $cursor: String) {
     blocks(sort: $sortOrder, first: $limit, after: $cursor) {

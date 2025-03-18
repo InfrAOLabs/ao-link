@@ -30,7 +30,7 @@ const outgoingMessagesQuery = (includeCount = false, isProcess?: boolean) => gql
       ${AO_MIN_INGESTED_AT}
       ${
         isProcess
-          ? `tags: [{ name: "From-Process", values: [$entityId] }]`
+          ? `tags: [{ name: "From-Process", values: [$entityId] }, ${AO_NETWORK_IDENTIFIER}]`
           : `tags: [${AO_NETWORK_IDENTIFIER}]
              owners: [$entityId]`
       }
@@ -90,6 +90,7 @@ const incomingMessagesQuery = (includeCount = false) => gql`
       after: $cursor
 
       recipients: [$entityId]
+      tags: [${AO_NETWORK_IDENTIFIER}]
       ${AO_MIN_INGESTED_AT}
     ) {
       ${includeCount ? "count" : ""}
@@ -142,7 +143,7 @@ const tokenTransfersQuery = (includeCount = false) => gql`
       first: $limit
       after: $cursor
 
-      tags: [{ name: "Action", values: ["Credit-Notice", "Debit-Notice"] }]
+      tags: [{ name: "Action", values: ["Credit-Notice", "Debit-Notice"] }, ${AO_NETWORK_IDENTIFIER}]
       recipients: [$entityId]
       ${AO_MIN_INGESTED_AT}
     ) {
@@ -202,7 +203,7 @@ const spawnedProcessesQuery = (includeCount = false, isProcess?: boolean) => gql
       ${AO_MIN_INGESTED_AT}
       ${
         isProcess
-          ? `tags: [{ name: "From-Process", values: [$entityId]}, { name: "Type", values: ["Process"]}]`
+          ? `tags: [{ name: "From-Process", values: [$entityId]}, { name: "Type", values: ["Process"]}, ${AO_NETWORK_IDENTIFIER}]`
           : `tags: [${AO_NETWORK_IDENTIFIER}, { name: "Type", values: ["Process"]}]
              owners: [$entityId]`
       }
@@ -254,7 +255,7 @@ export async function getMessageById(id: string): Promise<AoMessage | null> {
     .query<TransactionsResponse>(
       gql`
         query ($id: ID!) {
-          transactions(ids: [$id], ${AO_MIN_INGESTED_AT}) {
+          transactions(ids: [$id], tags: [${AO_NETWORK_IDENTIFIER}], ${AO_MIN_INGESTED_AT}) {
             ...MessageFields
           }
         }
@@ -288,7 +289,7 @@ const processesQuery = (includeCount = false) => gql`
       first: $limit
       after: $cursor
 
-      tags: [{ name: "Module", values: [$moduleId]}, { name: "Type", values: ["Process"]}]
+      tags: [{ name: "Module", values: [$moduleId]}, { name: "Type", values: ["Process"]}, ${AO_NETWORK_IDENTIFIER}]
       ${AO_MIN_INGESTED_AT}
     ) {
       ${includeCount ? "count" : ""}
@@ -343,7 +344,7 @@ const modulesQuery = (includeCount = false) => gql`
       first: $limit
       after: $cursor
 
-      tags: [{ name: "Type", values: ["Module"]}]
+      tags: [{ name: "Type", values: ["Module"]}, ${AO_NETWORK_IDENTIFIER}]
       ${AO_MIN_INGESTED_AT}
     ) {
       ${includeCount ? "count" : ""}
@@ -399,7 +400,7 @@ const resultingMessagesQuery = (includeCount = false, useOldRefSymbol = false) =
       first: $limit
       after: $cursor
 
-      tags: [{ name: "${useOldRefSymbol ? "Ref_" : "Reference"}", values: $msgRefs },{ name: "From-Process", values: [$fromProcessId] }]
+      tags: [{ name: "${useOldRefSymbol ? "Ref_" : "Reference"}", values: $msgRefs },{ name: "From-Process", values: [$fromProcessId] }, ${AO_NETWORK_IDENTIFIER}]
       ${AO_MIN_INGESTED_AT}
     ) {
       ${includeCount ? "count" : ""}
@@ -460,7 +461,7 @@ const linkedMessagesQuery = (includeCount = false) => gql`
       first: $limit
       after: $cursor
 
-      tags: [{ name: "Pushed-For", values: [$messageId] }]
+      tags: [{ name: "Pushed-For", values: [$messageId] }, ${AO_NETWORK_IDENTIFIER}]
       ${AO_MIN_INGESTED_AT}
     ) {
       ${includeCount ? "count" : ""}
@@ -634,7 +635,7 @@ const evalMessagesQuery = (includeCount = false) => gql`
       first: $limit
       after: $cursor
 
-      tags: [{ name: "Action", values: ["Eval"] }]
+      tags: [{ name: "Action", values: ["Eval"] }, ${AO_NETWORK_IDENTIFIER}]
       recipients: [$entityId]
       ${AO_MIN_INGESTED_AT}
     ) {
@@ -683,7 +684,7 @@ const networkStatsQuery = gql`
       first: 1
       owners: ["yqRGaljOLb2IvKkYVa87Wdcc8m_4w6FI58Gej05gorA"]
       recipients: ["vdpaKV_BQNISuDgtZpLDfDlMJinKHqM3d2NWd3bzeSk"]
-      tags: [{ name: "Action", values: ["Update-Stats"] }]
+      tags: [{ name: "Action", values: ["Update-Stats"] }, ${AO_NETWORK_IDENTIFIER}]
     ) {
       ...MessageFields
     }

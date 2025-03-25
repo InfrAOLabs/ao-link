@@ -1,3 +1,5 @@
+import { result } from "@permaweb/aoconnect/browser"
+import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { gql } from "urql"
 
 import { goldsky } from "./graphql-client"
@@ -445,6 +447,67 @@ export async function getResultingMessages(
   }
 }
 
+const actionListToStr = (actions: string[]): string => {
+  return actions.reduce((str, next, index) => {
+    return str + `"${next}"${index < actions.length - 1 ? ", " : ""}`
+  }, "")
+}
+
+const resultingMessagesIdsQuery = (
+  recipient: string,
+  actions: string[] = [],
+  useOldRefSymbol = false,
+) => gql`
+  query (
+    $msgRefs: [String!]!
+    $limit: Int!
+    $sortOrder: SortOrder!
+    $cursor: String
+  ) {
+    transactions(
+      sort: $sortOrder
+      first: $limit
+      after: $cursor
+      recipients: ["${recipient}"]
+      tags: [
+        { name: "${useOldRefSymbol ? "Ref_" : "Reference"}", values: $msgRefs },
+        ${actions.length > 0 ? `{ name: "Action", values: [${actionListToStr(actions)}] }` : ""}
+      ]
+      ${AO_MIN_INGESTED_AT}
+    ) {
+      ...MessageFields
+    }
+  }
+
+  ${messageFields}
+`
+export const getResultingMessagesNodes = async (
+  recipient: string,
+  limit = 100,
+  cursor = "",
+  ascending: boolean,
+  actions?: string[],
+  msgRefs?: string[],
+  useOldRefSymbol = false,
+) => {
+  const result = await goldsky
+    .query<TransactionsResponse>(resultingMessagesIdsQuery(recipient, actions, useOldRefSymbol), {
+      limit,
+      cursor,
+      sortOrder: ascending ? "HEIGHT_ASC" : "INGESTED_AT_DESC",
+      msgRefs: msgRefs || [],
+    })
+    .toPromise()
+
+  const { data } = result
+  if (!data) return []
+
+  const { edges } = data.transactions
+  const nodes = edges.map((e) => e.node)
+
+  return nodes
+}
+
 /**
  * WARN This query fails if both count and cursor are set
  */
@@ -823,5 +886,94 @@ export async function getSetRecordsToEntityId(
     return [count, events]
   } catch (error) {
     return [0, []]
+  }
+}
+
+export type MessageTree = AoMessage & {
+  result: MessageResult
+  leafMessages: MessageTree[]
+}
+
+export interface FetchMessageGraphArgs {
+  msgId: string
+  actions: string[]
+  startFromPushedFor?: boolean
+}
+
+export const fetchMessageGraph = async ({
+  msgId,
+  actions,
+  startFromPushedFor = false,
+}: FetchMessageGraphArgs): Promise<MessageTree | null> => {
+  try {
+    let originalMsg = await getMessageById(msgId)
+
+    if (!originalMsg) {
+      return null
+    }
+
+    if (startFromPushedFor) {
+      const pushedFor = originalMsg.tags["Pushed-For"]
+
+      if (pushedFor) {
+        originalMsg = await getMessageById(pushedFor)
+      }
+    }
+
+    if (!originalMsg) {
+      return null
+    }
+
+    const res = await result({
+      process: originalMsg.to,
+      message: originalMsg.id,
+    })
+
+    const head: MessageTree = Object.assign({}, originalMsg, {
+      leafMessages: [],
+      result: res,
+    })
+
+    if (!head) {
+      return null
+    }
+
+    for (const result of head.result.Messages ?? []) {
+      const refTag = result.Tags.find((t: any) => ["Ref_", "Reference"].includes(t.name))
+
+      if (!refTag) {
+        head.leafMessages.push(result)
+        continue
+      }
+
+      const shouldUseOldRefSymbol = refTag.name === "Ref_"
+
+      const nodes = await getResultingMessagesNodes(
+        result.Target,
+        100,
+        "",
+        false,
+        [refTag.value],
+        [],
+        shouldUseOldRefSymbol,
+      )
+
+      let leafs = []
+
+      for (const node of nodes) {
+        const leaf = await fetchMessageGraph({ msgId: node.id, actions })
+
+        leafs.push(leaf)
+      }
+
+      leafs = leafs.filter((l) => l !== null)
+
+      head.leafMessages = head.leafMessages.concat(leafs)
+    }
+
+    return head
+  } catch (err) {
+    console.error("Failed to fetch message graph:", err)
+    return null
   }
 }

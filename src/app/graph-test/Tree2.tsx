@@ -30,7 +30,7 @@ interface MessageTreeProps {
   curve?: d3.CurveFactory // curve for the link
 }
 
-export function MessageTreeGraph({
+export function MessageTree2({
   data,
   path,
   id = Array.isArray(data) ? (d: any) => d.id : null,
@@ -128,17 +128,15 @@ export function MessageTreeGraph({
           .y((d: any) => d.x) as any,
       )
 
-    // TODO(Nikita): Refactor all nodes and links with labels to be under common
-    //               g element and apply zoom only to that g
-    // const zoom = d3
-    //   .zoom<SVGSVGElement, unknown>()
-    //   .scaleExtent([1, 1])
-    //   .on("zoom", (event) => {
-    //     svg.attr("transform", event.transform as any)
-    //   })
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 1])
+      .on("zoom", (event) => {
+        svg.attr("transform", event.transform as any)
+      })
 
-    // // @ts-ignore
-    // svg.call(zoom)
+    // @ts-ignore
+    svg.call(zoom)
 
     const node = svg
       .append("g")

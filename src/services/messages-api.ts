@@ -974,6 +974,7 @@ export const fetchMessageGraph = async ({
 
       leafs = leafs.filter((l) => l !== null)
 
+      // @ts-ignore
       head.children = head.children.concat(leafs)
     }
 

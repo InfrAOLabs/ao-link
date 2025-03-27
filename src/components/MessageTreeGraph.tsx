@@ -34,20 +34,6 @@ const ERROR_COLOR = "#9e1111"
 const SUCCESS_COLOR_1 = "#12a632"
 const SUCCESS_COLOR_2 = "#107d28"
 
-const nodeOrChildrenHasErrors = (d: d3.HierarchyNode<unknown>) => {
-  if ((d.data as any).result.error) {
-    return true
-  }
-
-  for (const child of d.children ?? []) {
-    if (nodeOrChildrenHasErrors(child)) {
-      return true
-    }
-  }
-
-  return false
-}
-
 export function MessageTreeGraph({
   data,
   path,

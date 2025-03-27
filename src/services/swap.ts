@@ -1,6 +1,6 @@
-import { AoMessage } from "@/types"
 import { fetchMessageGraph, MessageTree } from "./messages-api"
 import { getTokenInfo, TokenInfo } from "./token-api"
+import { AoMessage } from "@/types"
 
 export interface Transfer {
   from: string

@@ -1,15 +1,10 @@
 import { Avatar, Box, Skeleton, Stack, Typography } from "@mui/material"
-import { FC, Fragment } from "react"
+import { Fragment } from "react"
 import { useParams } from "react-router-dom"
 
 import { EntityBlock } from "@/components/EntityBlock"
 import { MessageTreeGraph } from "@/components/MessageTreeGraph"
 import { useSwap } from "@/hooks/useSwap"
-import { MessageTree } from "@/services/messages-api"
-
-// const flatMessageTree = (root: MessageTree) => {
-//   return [root]
-// }
 
 export function SwapPage() {
   const { messageId = "" } = useParams()

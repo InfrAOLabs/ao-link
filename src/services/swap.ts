@@ -1,3 +1,4 @@
+import { AoMessage } from "@/types"
 import { fetchMessageGraph, MessageTree } from "./messages-api"
 import { getTokenInfo, TokenInfo } from "./token-api"
 
@@ -7,6 +8,7 @@ export interface Transfer {
   process: string
   amount: string
   tokenInfo: TokenInfo | null
+  message: AoMessage
 }
 
 export interface Swap {
@@ -21,7 +23,7 @@ export const getSwap = async (msgId: string) => {
   try {
     const tree = await fetchMessageGraph({
       msgId,
-      actions: ["Order-Confirmation", "Transfer", "Credit-Notice", "Debit-Notice"],
+      actions: ["Order-Confirmation", "Order-Error", "Transfer", "Credit-Notice", "Debit-Notice"],
       startFromPushedFor: true,
     })
 
@@ -72,6 +74,7 @@ function getAllTransfers(tree: MessageTree): Omit<Transfer, "tokenInfo">[] {
       to: tree.tags["Recipient"] ?? "",
       amount: tree.tags["Quantity"] ?? "0",
       process: tree.to,
+      message: tree,
     })
   }
 

@@ -1,7 +1,7 @@
 import { Fade, Stack, Tooltip } from "@mui/material"
 import { DiamondsFour } from "@phosphor-icons/react"
 import { useQuery } from "@tanstack/react-query"
-import React from "react"
+import React, { useMemo } from "react"
 
 import { IdBlock } from "./IdBlock"
 import { useArnsForEntityId } from "@/hooks/useArnsForEntityId"
@@ -19,6 +19,10 @@ export function EntityBlock(props: EntityBlockProps) {
     queryFn: () => getMessageById(entityId),
   })
 
+  const entityName = useMemo(() => {
+    return message?.tags["Name"]
+  }, [message])
+
   const arnsDomain = useArnsForEntityId(entityId)
 
   return (
@@ -31,7 +35,15 @@ export function EntityBlock(props: EntityBlockProps) {
         </Fade>
       )}
       <IdBlock
-        label={arnsDomain ? arnsDomain : fullId ? entityId : truncateId(entityId)}
+        label={
+          entityName
+            ? entityName
+            : arnsDomain
+              ? arnsDomain
+              : fullId
+                ? entityId
+                : truncateId(entityId)
+        }
         value={entityId}
         href={`/entity/${entityId}`}
       />

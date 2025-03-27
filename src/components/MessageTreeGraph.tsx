@@ -30,6 +30,24 @@ interface MessageTreeProps {
   curve?: d3.CurveFactory // curve for the link
 }
 
+const ERROR_COLOR = "#9e1111"
+const SUCCESS_COLOR_1 = "#12a632"
+const SUCCESS_COLOR_2 = "#107d28"
+
+const nodeOrChildrenHasErrors = (d: d3.HierarchyNode<unknown>) => {
+  if ((d.data as any).result.error) {
+    return true
+  }
+
+  for (const child of d.children ?? []) {
+    if (nodeOrChildrenHasErrors(child)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 export function MessageTreeGraph({
   data,
   path,
@@ -112,7 +130,7 @@ export function MessageTreeGraph({
     svg
       .append("g")
       .attr("fill", "none")
-      .attr("stroke", stroke)
+      // .attr("stroke", stroke)
       .attr("stroke-opacity", strokeOpacity || null)
       .attr("stroke-linecap", strokeLinecap || null)
       .attr("stroke-linejoin", strokeLinejoin || null)
@@ -120,6 +138,21 @@ export function MessageTreeGraph({
       .selectAll("path")
       .data(root.links())
       .join("path")
+      .attr("stroke", (d) => {
+        const childrenErrors = d.target.children?.reduce(
+          (acc: number, c: any) => acc + (c.data.result?.error ? 1 : 0),
+          0,
+        )
+
+        if (
+          childrenErrors === (d.target.children?.length ?? -1) ||
+          (d.target.data as any).result.error
+        ) {
+          return ERROR_COLOR
+        }
+
+        return SUCCESS_COLOR_2
+      })
       .attr(
         "d",
         d3
@@ -151,7 +184,26 @@ export function MessageTreeGraph({
 
     node
       .append("circle")
-      .attr("fill", (d: any) => (d.children ? stroke : fill))
+      .attr("fill", (d: any) => {
+        const message = d.data
+
+        if (d.children) {
+          const childrenErrors = d.children.reduce(
+            (acc: number, c: any) => acc + (c.data.result?.error ? 1 : 0),
+            0,
+          )
+
+          if (childrenErrors === d.children.length) {
+            return ERROR_COLOR
+          }
+        }
+
+        if (message.result.error) {
+          return ERROR_COLOR
+        } else {
+          return d.children ? SUCCESS_COLOR_2 : SUCCESS_COLOR_1
+        }
+      })
       .attr("r", r)
 
     node
@@ -186,6 +238,7 @@ export function MessageTreeGraph({
           `Message ID: ${message.id}`,
           `From: ${message.from}`,
           `To: ${message.to}`,
+          message.result.Error ? `Error: ${message.result.Error}` : "",
           `Action: ${message.tags["Action"] ?? ""}`,
           `Timestamp: ${new Date(message.ingestedAt).toLocaleString()}`,
           `Block Height: ${message.blockHeight}`,

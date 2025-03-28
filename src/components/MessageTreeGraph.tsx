@@ -1,5 +1,5 @@
 import * as d3 from "d3"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { MessageTree } from "@/services/messages-api"
 
@@ -61,6 +61,9 @@ export function MessageTreeGraph({
   curve = d3.curveBumpX,
 }: MessageTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [tooltips, setTooltips] = useState<{ [id: string]: { x: number; y: number; data: any } }>(
+    {},
+  )
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -116,7 +119,6 @@ export function MessageTreeGraph({
     svg
       .append("g")
       .attr("fill", "none")
-      // .attr("stroke", stroke)
       .attr("stroke-opacity", strokeOpacity || null)
       .attr("stroke-linecap", strokeLinecap || null)
       .attr("stroke-linejoin", strokeLinejoin || null)
@@ -163,9 +165,9 @@ export function MessageTreeGraph({
       .append("g")
       .selectAll("a")
       .data(root.descendants())
-      .join("a")
-      .attr("xlink:href", link == null ? null : (d) => link(d.data, d))
-      .attr("target", link == null ? null : linkTarget)
+      .join("g")
+      .attr("class", "node")
+      .attr("data-id", (d: any) => d.data.id)
       .attr("transform", (d: any) => `translate(${d.y},${d.x})`)
 
     node
@@ -191,59 +193,49 @@ export function MessageTreeGraph({
         }
       })
       .attr("r", r)
+      .style("cursor", "pointer")
 
-    node
-      .on("mouseover", function (event: MouseEvent, d) {
-        const message = d.data as MessageTree | null
-        if (!message) {
-          console.log("No message found")
-          return
-        }
+    node.on("click", function (event: MouseEvent, d) {
+      event.preventDefault()
+      event.stopPropagation()
 
-        const tooltip = d3
-          .select("body")
-          .append("div")
-          .attr("class", "tooltip")
-          .style("position", "absolute")
-          .style("background", "white")
-          .style("border", "1px solid #ccc")
-          .style("padding", "8px")
-          .style("border-radius", "4px")
-          .style("pointer-events", "none")
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
-          .style("z-index", "1000")
-          .style("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
-          .style("font-size", "12px")
-          .style("line-height", "1.4")
-          .style("max-width", "400px")
-          .style("white-space", "pre-wrap")
-          .style("font-family", "monospace")
+      const message = d.data as MessageTree | null
+      if (!message) {
+        console.log("No message found")
+        return
+      }
 
-        const info = [
-          `Message ID: ${message.id}`,
-          `From: ${message.from}`,
-          `To: ${message.to}`,
-          message.result.Error ? `Error: ${message.result.Error}` : "",
-          `Action: ${message.tags["Action"] ?? ""}`,
-          `Timestamp: ${new Date(message.ingestedAt).toLocaleString()}`,
-          `Block Height: ${message.blockHeight}`,
-          "Tags:",
-          ...Object.entries(message.tags || {}).map(([key, value]) => `  ${key}: ${value}`),
-          "Produced results:",
-          Object.entries(message.result || {}).length.toString(),
-        ]
+      const tooltipWidth = 400
+      const tooltipHeight = 300
 
-        info.forEach((line) => {
-          tooltip.append("div").text(line)
-        })
+      const viewportWidth = width
+      const viewportHeight = height
 
-        d3.select(this).style("fill", "#6B46C1")
-      })
-      .on("mouseout", function () {
-        d3.selectAll(".tooltip").remove()
-        d3.select(this).style("fill", stroke)
-      })
+      let tooltipX = event.pageX - tooltipWidth / 2
+      let tooltipY = event.pageY - tooltipHeight / 2
+
+      if (tooltipX < 0) {
+        tooltipX = 10
+      }
+      if (tooltipX + tooltipWidth > viewportWidth) {
+        tooltipX = viewportWidth - tooltipWidth - 10
+      }
+      if (tooltipY < 0) {
+        tooltipY = 10
+      }
+      if (tooltipY + tooltipHeight > viewportHeight) {
+        tooltipY = viewportHeight - tooltipHeight - 10
+      }
+
+      setTooltips((prev) => ({
+        ...prev,
+        [message.id]: {
+          x: tooltipX,
+          y: tooltipY,
+          data: message,
+        },
+      }))
+    })
 
     if (L)
       node
@@ -253,6 +245,7 @@ export function MessageTreeGraph({
         .attr("text-anchor", (d: any) => (d.children ? "end" : "start"))
         .attr("paint-order", "stroke")
         .style("user-select", "none")
+        .style("cursor", "pointer")
         .attr("stroke", halo)
         .attr("stroke-width", haloWidth)
         .text((d, i) => L[i])
@@ -285,5 +278,168 @@ export function MessageTreeGraph({
     curve,
   ])
 
-  return <div style={{ width, height }} ref={containerRef} />
+  const startDrag = (e: React.MouseEvent, tooltipId: string, width: number, height: number) => {
+    e.preventDefault()
+
+    const initialX = e.clientX
+    const initialY = e.clientY
+    const tooltip = tooltips[tooltipId]
+    const initialTooltipX = tooltip.x
+    const initialTooltipY = tooltip.y
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - initialX
+      const deltaY = moveEvent.clientY - initialY
+
+      let newX = initialTooltipX + deltaX
+      let newY = initialTooltipY + deltaY
+
+      const viewportWidth = width
+      const viewportHeight = height
+
+      const tooltipWidth = 400
+      const tooltipHeight = 300
+
+      if (newX < 0) {
+        newX = 0
+      }
+      if (newX + tooltipWidth > viewportWidth) {
+        newX = viewportWidth - tooltipWidth
+      }
+      if (newY < 0) {
+        newY = 0
+      }
+      if (newY + tooltipHeight > viewportHeight) {
+        newY = viewportHeight - tooltipHeight
+      }
+
+      setTooltips((prev) => ({
+        ...prev,
+        [tooltipId]: {
+          ...prev[tooltipId],
+          x: newX,
+          y: newY,
+        },
+      }))
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
+  }
+
+  const closeTooltip = (tooltipId: string) => {
+    setTooltips((prev) => {
+      const newTooltips = { ...prev }
+      delete newTooltips[tooltipId]
+      return newTooltips
+    })
+  }
+
+  return (
+    <div style={{ width, height, position: "relative" }} ref={containerRef}>
+      {Object.entries(tooltips).map(([id, tooltip]) => (
+        <div
+          key={id}
+          style={{
+            position: "absolute",
+            left: `${tooltip.x}px`,
+            top: `${tooltip.y}px`,
+            background: "white",
+            border: "1px solid #ccc",
+            padding: "8px",
+            borderRadius: "4px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            zIndex: 1000,
+            width: "400px",
+            maxHeight: "80vh",
+            overflowY: "auto",
+            fontFamily: "monospace",
+            fontSize: "12px",
+            lineHeight: "1.4",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+              cursor: "move",
+              padding: "4px",
+              background: "#f5f5f5",
+              borderBottom: "1px solid #ddd",
+            }}
+            onMouseDown={(e) => startDrag(e, id, Number(width), Number(height))}
+          >
+            <span>
+              Message Details {tooltip.data.id.slice(0, 5)}...
+              {tooltip.data.id.slice(tooltip.data.id.length - 5, tooltip.data.id.length)}
+            </span>
+            <button
+              onClick={() => closeTooltip(id)}
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "bold",
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div>
+            <div>
+              <span>Message ID:</span>
+              <a
+                href={`https://www.ao.link/#/message/${tooltip.data.id}`}
+                target="_blank"
+                referrerPolicy="no-referrer"
+              >
+                {tooltip.data.id}
+              </a>
+            </div>
+            <div>
+              <span>From:</span>
+              <a
+                href={`https://www.ao.link/#/entity/${tooltip.data.from}`}
+                target="_blank"
+                referrerPolicy="no-referrer"
+              >
+                {tooltip.data.from}
+              </a>
+            </div>
+            <div>
+              <span>To:</span>
+              <a
+                href={`https://www.ao.link/#/entity/${tooltip.data.to}`}
+                target="_blank"
+                referrerPolicy="no-referrer"
+              >
+                {tooltip.data.to}
+              </a>
+            </div>
+            {tooltip.data.result.Error && <div>Error: {tooltip.data.result.Error}</div>}
+            <div>Action: {tooltip.data.tags["Action"] ?? ""}</div>
+            <div>Timestamp: {new Date(tooltip.data.ingestedAt).toLocaleString()}</div>
+            <div>Block Height: {tooltip.data.blockHeight}</div>
+            <div>Tags:</div>
+            {Object.entries(tooltip.data.tags || {}).map(([key, value]) => (
+              <div key={key} style={{ paddingLeft: "12px" }}>
+                {key}: {String(value)}
+              </div>
+            ))}
+            <div>
+              Produced results: {Object.entries(tooltip.data.result || {}).length.toString()}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }

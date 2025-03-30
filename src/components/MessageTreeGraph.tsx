@@ -27,12 +27,15 @@ interface MessageTreeProps {
   strokeLinecap?: string // stroke line cap for links
   halo?: string // color of label halo
   haloWidth?: number // padding around the labels
-  curve?: d3.CurveFactory // curve for the link
+  curve?: d3.CurveFactory // curve for the link,
+  highlightPath?: string[]
+  highlightPathColor?: string
 }
 
 const ERROR_COLOR = "#9e1111"
-const SUCCESS_COLOR_1 = "#12a632"
-const SUCCESS_COLOR_2 = "#107d28"
+const SUCCESS_COLOR = "#22bb33"
+const USUAL_COLOR = "#555"
+const USUAL_COLOR_2 = "#888"
 
 export function MessageTreeGraph({
   data,
@@ -59,6 +62,8 @@ export function MessageTreeGraph({
   halo = "#fff",
   haloWidth = 3,
   curve = d3.curveBumpX,
+  highlightPath = [],
+  highlightPathColor = SUCCESS_COLOR,
 }: MessageTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [tooltips, setTooltips] = useState<{ [id: string]: { x: number; y: number; data: any } }>(
@@ -134,12 +139,19 @@ export function MessageTreeGraph({
 
         if (
           childrenErrors === (d.target.children?.length ?? -1) ||
-          (d.target.data as any).result.error
+          (d.target.data as any).result?.error
         ) {
           return ERROR_COLOR
         }
 
-        return SUCCESS_COLOR_2
+        if (highlightPath[d.target.depth]) {
+          // @ts-ignore
+          if (highlightPath[d.target.depth] === d.target.data?.tags["Action"]) {
+            return highlightPathColor
+          }
+        }
+
+        return USUAL_COLOR_2
       })
       .attr(
         "d",
@@ -186,10 +198,16 @@ export function MessageTreeGraph({
           }
         }
 
-        if (message.result.error) {
+        if (highlightPath[d.depth]) {
+          if (highlightPath[d.depth] === message.tags["Action"]) {
+            return highlightPathColor
+          }
+        }
+
+        if (message.result?.error) {
           return ERROR_COLOR
         } else {
-          return d.children ? SUCCESS_COLOR_2 : SUCCESS_COLOR_1
+          return d.children ? USUAL_COLOR_2 : USUAL_COLOR
         }
       })
       .attr("r", r)
@@ -276,6 +294,8 @@ export function MessageTreeGraph({
     halo,
     haloWidth,
     curve,
+    highlightPath,
+    highlightPathColor,
   ])
 
   const startDrag = (e: React.MouseEvent, tooltipId: string, width: number, height: number) => {
@@ -424,7 +444,7 @@ export function MessageTreeGraph({
                 {tooltip.data.to}
               </a>
             </div>
-            {tooltip.data.result.Error && <div>Error: {tooltip.data.result.Error}</div>}
+            {tooltip.data.result?.error && <div>Error: {tooltip.data.result.error}</div>}
             <div>Action: {tooltip.data.tags["Action"] ?? ""}</div>
             <div>Timestamp: {new Date(tooltip.data.ingestedAt).toLocaleString()}</div>
             <div>Block Height: {tooltip.data.blockHeight}</div>

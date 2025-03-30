@@ -23,7 +23,15 @@ import { getTokenInfo } from "@/services/token-api"
 import { TYPE_PATH_MAP } from "@/utils/data-utils"
 import { isArweaveId } from "@/utils/utils"
 
-type ResultType = "Message" | "Entity" | "Block" | "Checkpoint" | "Assignment" | "Process" | "Token"
+type ResultType =
+  | "Message"
+  | "Entity"
+  | "Block"
+  | "Checkpoint"
+  | "Assignment"
+  | "Process"
+  | "Token"
+  | "Swap"
 
 type Result = {
   label: string
@@ -54,6 +62,14 @@ async function findByText(text: string): Promise<Result[]> {
       label: text,
       id: msg.id,
       type: msg.type,
+    })
+  }
+
+  if (msg && msg.action === "Transfer") {
+    results.push({
+      label: text,
+      id: msg.id,
+      type: "Swap" as const,
     })
   }
 

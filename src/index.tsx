@@ -18,7 +18,6 @@ import ArnsPage from "./app/arns/ArnsPage"
 import BlockPage from "./app/block/[slug]/BlockPage"
 import BlocksPage from "./app/blocks/BlocksPage"
 import EntityPage from "./app/entity/[slug]/EntityPage"
-import { GraphTestPage } from "./app/graph-test/GraphTestPage"
 import { MessagePage } from "./app/message/[slug]/MessagePage"
 import { ModulePage } from "./app/module/[slug]/ModulePage"
 import ModulesPage from "./app/modules/ModulesPage"
@@ -44,7 +43,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/token/:tokenId" element={<TokenPage />} />
         <Route path="/arns" element={<ArnsPage />} />
         <Route path="/swap/:messageId" element={<SwapPage />} />
-        <Route path="/graph-test" element={<GraphTestPage />} />
         <Route path="*" element={<FourZeroFourPage />} />
       </Routes>
     </RootLayoutUI>

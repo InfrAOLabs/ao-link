@@ -901,7 +901,7 @@ export async function getSetRecordsToEntityId(
 }
 
 export type MessageTree = AoMessage & {
-  result: MessageResult
+  result: MessageResult | null
   children: MessageTree[]
 }
 
@@ -909,12 +909,15 @@ export interface FetchMessageGraphArgs {
   msgId: string
   actions?: string[]
   startFromPushedFor?: boolean
+  ignoreRepeatingMessages?: boolean
+  depth?: number
 }
 
 export const fetchMessageGraph = async ({
   msgId,
   actions,
   startFromPushedFor = false,
+  ignoreRepeatingMessages = false,
 }: FetchMessageGraphArgs): Promise<MessageTree | null> => {
   try {
     let originalMsg = await getMessageById(msgId)
@@ -935,10 +938,16 @@ export const fetchMessageGraph = async ({
       return null
     }
 
-    const res = await result({
-      process: originalMsg.to,
-      message: originalMsg.id,
-    })
+    const receiverMsg = await getMessageById(originalMsg.to)
+
+    let res = null
+
+    if (receiverMsg && receiverMsg.type === "Process") {
+      res = await result({
+        process: originalMsg.to,
+        message: originalMsg.id,
+      })
+    }
 
     const head: MessageTree = Object.assign({}, originalMsg, {
       children: [],
@@ -949,7 +958,7 @@ export const fetchMessageGraph = async ({
       return null
     }
 
-    for (const result of head.result.Messages ?? []) {
+    for (const result of head.result?.Messages ?? []) {
       const refTag = result.Tags.find((t: any) => ["Ref_", "Reference"].includes(t.name))
 
       const shouldUseOldRefSymbol = refTag.name === "Ref_"
@@ -964,10 +973,20 @@ export const fetchMessageGraph = async ({
         useOldRefSymbol: shouldUseOldRefSymbol,
       })
 
+      let nodesIds = nodes.map((n) => n.id)
+
+      if (ignoreRepeatingMessages) {
+        nodesIds = [...new Set(nodesIds)]
+      }
+
       let leafs = []
 
-      for (const node of nodes) {
-        const leaf = await fetchMessageGraph({ msgId: node.id, actions })
+      for (const nodeId of nodesIds) {
+        const leaf = await fetchMessageGraph({
+          msgId: nodeId,
+          actions,
+          ignoreRepeatingMessages,
+        })
 
         leafs.push(leaf)
       }

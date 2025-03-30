@@ -8,7 +8,9 @@ export interface Transfer {
   process: string
   amount: string
   tokenInfo: TokenInfo | null
+  timestamp: Date | null
   message: AoMessage
+  repushable: boolean
 }
 
 export interface Swap {
@@ -25,6 +27,7 @@ export const getSwap = async (msgId: string) => {
       msgId,
       actions: ["Order-Confirmation", "Order-Error", "Transfer", "Credit-Notice", "Debit-Notice"],
       startFromPushedFor: true,
+      ignoreRepeatingMessages: true,
     })
 
     if (!tree) {
@@ -74,7 +77,10 @@ function getAllTransfers(tree: MessageTree): Omit<Transfer, "tokenInfo">[] {
       to: tree.tags["Recipient"] ?? "",
       amount: tree.tags["Quantity"] ?? "0",
       process: tree.to,
+      timestamp: tree.blockTimestamp,
       message: tree,
+      // @ts-ignore
+      repushable: tree.action === "Transfer" && tree.result?.error,
     })
   }
 

@@ -17,6 +17,7 @@ export const TYPE_ICON_MAP: Record<string, any> = {
   Process: "/process.svg",
   Message: "/message.svg",
   Module: "/article.svg",
+  Swap: "/message.svg",
 }
 
 export const TYPE_COLOR_MAP: Record<string, string> = {
@@ -25,6 +26,7 @@ export const TYPE_COLOR_MAP: Record<string, string> = {
   Checkpoint: "#80deea",
   Process: "#B8C3E0",
   Message: "#E2F0DC",
+  Swap: "#E2ACCC",
   Owner: "#FFADAD",
   Block: "#FEEEE5",
   Entity: "#9EA2AA",
@@ -35,6 +37,7 @@ export const TYPE_PATH_MAP: Record<string, string> = {
   Module: "module",
   Assignment: "message",
   Checkpoint: "message",
+  Swap: "swap",
   Process: "entity",
   Message: "message",
   Owner: "entity",

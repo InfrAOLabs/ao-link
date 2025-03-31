@@ -1,3 +1,5 @@
+import { result } from "@permaweb/aoconnect/browser"
+import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { gql } from "urql"
 
 import { goldsky } from "./graphql-client"
@@ -446,6 +448,78 @@ export async function getResultingMessages(
   }
 }
 
+const listToStr = (strs: string[]): string => {
+  return strs.reduce((str, next, index) => {
+    return str + `"${next}"${index < strs.length - 1 ? ", " : ""}`
+  }, "")
+}
+
+const resultingMessagesIdsQuery = (
+  recipient: string,
+  actions: string[] = [],
+  useOldRefSymbol = false,
+) => gql`
+  query (
+    $msgRefs: [String!]!
+    $limit: Int!
+    $sortOrder: SortOrder!
+    $cursor: String
+  ) {
+    transactions(
+      sort: $sortOrder
+      first: $limit
+      after: $cursor
+      recipients: ["${recipient}"]
+      tags: [
+        { name: "${useOldRefSymbol ? "Ref_" : "Reference"}", values: $msgRefs },
+        ${actions.length > 0 ? `{ name: "Action", values: [${listToStr(actions)}] }` : ""}
+      ]
+      ${AO_MIN_INGESTED_AT}
+    ) {
+      ...MessageFields
+    }
+  }
+
+  ${messageFields}
+`
+
+export interface GetResultingMessagesNodesArgs {
+  recipient: string
+  limit: number
+  cursor: string
+  ascending: boolean
+  actions?: string[]
+  msgRefs?: string[]
+  useOldRefSymbol: boolean
+}
+
+export const getResultingMessagesNodes = async ({
+  recipient,
+  limit = 100,
+  cursor = "",
+  ascending,
+  actions,
+  msgRefs,
+  useOldRefSymbol = false,
+}: GetResultingMessagesNodesArgs) => {
+  const result = await goldsky
+    .query<TransactionsResponse>(resultingMessagesIdsQuery(recipient, actions, useOldRefSymbol), {
+      limit,
+      cursor,
+      sortOrder: ascending ? "HEIGHT_ASC" : "INGESTED_AT_DESC",
+      msgRefs: msgRefs || [],
+    })
+    .toPromise()
+
+  const { data } = result
+  if (!data) return []
+
+  const { edges } = data.transactions
+  const nodes = edges.map((e) => e.node)
+
+  return nodes
+}
+
 /**
  * WARN This query fails if both count and cursor are set
  */
@@ -824,5 +898,109 @@ export async function getSetRecordsToEntityId(
     return [count, events]
   } catch (error) {
     return [0, []]
+  }
+}
+
+export type MessageTree = AoMessage & {
+  result: MessageResult | null
+  children: MessageTree[]
+}
+
+export interface FetchMessageGraphArgs {
+  msgId: string
+  actions?: string[]
+  startFromPushedFor?: boolean
+  ignoreRepeatingMessages?: boolean
+  depth?: number
+}
+
+export const fetchMessageGraph = async ({
+  msgId,
+  actions,
+  startFromPushedFor = false,
+  ignoreRepeatingMessages = false,
+}: FetchMessageGraphArgs): Promise<MessageTree | null> => {
+  try {
+    let originalMsg = await getMessageById(msgId)
+
+    if (!originalMsg) {
+      return null
+    }
+
+    if (startFromPushedFor) {
+      const pushedFor = originalMsg.tags["Pushed-For"]
+
+      if (pushedFor) {
+        originalMsg = await getMessageById(pushedFor)
+      }
+    }
+
+    if (!originalMsg) {
+      return null
+    }
+
+    const receiverMsg = await getMessageById(originalMsg.to)
+
+    let res = null
+
+    if (receiverMsg && receiverMsg.type === "Process") {
+      res = await result({
+        process: originalMsg.to,
+        message: originalMsg.id,
+      })
+    }
+
+    const head: MessageTree = Object.assign({}, originalMsg, {
+      children: [],
+      result: res,
+    })
+
+    if (!head) {
+      return null
+    }
+
+    for (const result of head.result?.Messages ?? []) {
+      const refTag = result.Tags.find((t: any) => ["Ref_", "Reference"].includes(t.name))
+
+      const shouldUseOldRefSymbol = refTag.name === "Ref_"
+
+      const nodes = await getResultingMessagesNodes({
+        recipient: result.Target,
+        limit: 100,
+        cursor: "",
+        actions,
+        ascending: false,
+        msgRefs: refTag ? [refTag.value] : [],
+        useOldRefSymbol: shouldUseOldRefSymbol,
+      })
+
+      let nodesIds = nodes.map((n) => n.id)
+
+      if (ignoreRepeatingMessages) {
+        nodesIds = [...new Set(nodesIds)]
+      }
+
+      let leafs = []
+
+      for (const nodeId of nodesIds) {
+        const leaf = await fetchMessageGraph({
+          msgId: nodeId,
+          actions,
+          ignoreRepeatingMessages,
+        })
+
+        leafs.push(leaf)
+      }
+
+      leafs = leafs.filter((l) => l !== null)
+
+      // @ts-ignore
+      head.children = head.children.concat(leafs)
+    }
+
+    return head
+  } catch (err) {
+    console.error("Failed to fetch message graph:", err)
+    return null
   }
 }

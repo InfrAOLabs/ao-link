@@ -1,6 +1,6 @@
-import { Avatar, Box, Button, Divider, Skeleton, Stack, Typography } from "@mui/material"
+import { Avatar, Box, Divider, Skeleton, Stack, Typography } from "@mui/material"
 import { Wallet, ArrowUpRight, ArrowDownLeft } from "@phosphor-icons/react"
-import { Fragment, useState } from "react"
+import { Fragment } from "react"
 import { useParams } from "react-router-dom"
 
 import { EntityBlock } from "@/components/EntityBlock"
@@ -13,28 +13,28 @@ interface SwapTransferProps {
 }
 
 function SwapTransfer({ t }: SwapTransferProps) {
-  const [isRepushing, setIsRepushing] = useState(false)
+  // const [isRepushing, setIsRepushing] = useState(false)
 
   const amount = (Number(t.amount) / 10 ** (t.tokenInfo?.denomination ?? 1)).toLocaleString(
     "en-US",
     { maximumFractionDigits: 6 },
   )
 
-  const repushMessage = async () => {
-    if (isRepushing) return
+  // const repushMessage = async () => {
+  //   if (isRepushing) return
 
-    setIsRepushing(true)
+  //   setIsRepushing(true)
 
-    try {
-      await fetch(`https://mu6.ao-testnet.xyz/push/${t.message.id}/3?process-id=${t.process}`, {
-        method: "POST",
-      })
-    } catch (err) {
-      console.error("Failed to repush", err)
-    }
+  //   try {
+  //     await fetch(`https://mu6.ao-testnet.xyz/push/${t.message.id}/3?process-id=${t.process}`, {
+  //       method: "POST",
+  //     })
+  //   } catch (err) {
+  //     console.error("Failed to repush", err)
+  //   }
 
-    setIsRepushing(false)
-  }
+  //   setIsRepushing(false)
+  // }
 
   return (
     <Box
@@ -51,11 +51,11 @@ function SwapTransfer({ t }: SwapTransferProps) {
             <EntityBlock entityId={t.from} />
             <Typography variant="caption">({t.timestamp?.toLocaleString() ?? ""})</Typography>
           </Box>
-          {t.repushable && (
+          {/* {t.repushable && (
             <Button variant="outlined" size="small" onClick={repushMessage} disabled={isRepushing}>
               Repush
             </Button>
-          )}
+          )} */}
         </Box>
         <Divider orientation="horizontal" />
         <Box ml={4} mt={0.5} display="flex" gap={0.6}>

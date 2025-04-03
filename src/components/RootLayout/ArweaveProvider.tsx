@@ -1,5 +1,7 @@
+import { ArweaveWalletKit } from "@arweave-wallet-kit/react"
+import WanderStrategy from "@arweave-wallet-kit/wander-strategy"
 import { useColorScheme } from "@mui/material"
-import { ArweaveWalletKit } from "arweave-wallet-kit"
+import AoSyncStrategy from "@vela-ventures/aosync-strategy"
 import React from "react"
 
 import { MainFontFF } from "./fonts"
@@ -9,24 +11,22 @@ export function ArweaveProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ArweaveWalletKit
+      config={{
+        permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION"],
+        ensurePermissions: true,
+        strategies: [new WanderStrategy(), new AoSyncStrategy()],
+        appInfo: {
+          name: "AoLink",
+        },
+      }}
       theme={{
         displayTheme: mode === "dark" ? "dark" : "light",
-        font: {
-          fontFamily: MainFontFF,
-        },
         radius: "none",
         accent: {
           r: 76,
           g: 175,
           b: 81,
         },
-      }}
-      config={{
-        appInfo: {
-          name: "AoLink",
-        },
-        permissions: ["ACCESS_ADDRESS", "SIGN_TRANSACTION"],
-        ensurePermissions: true,
       }}
     >
       {children}

@@ -3050,10 +3050,10 @@
     "@0no-co/graphql.web" "^1.0.5"
     wonka "^6.3.2"
 
-"@vela-ventures/ao-sync-sdk@^1.1.25":
-  version "1.1.25"
-  resolved "https://registry.yarnpkg.com/@vela-ventures/ao-sync-sdk/-/ao-sync-sdk-1.1.25.tgz#6d0020b936126db9e6576878b993679c557b167c"
-  integrity sha512-D4soEHcAUvaSnvmDmNrLMCI9mDAQEV5eEnPoltZoZJRAGIl858RdwDVAN25fneU/ho+zwpjmiXiqlcZXBFjZUQ==
+"@vela-ventures/ao-sync-sdk@^1.1.26":
+  version "1.1.26"
+  resolved "https://registry.yarnpkg.com/@vela-ventures/ao-sync-sdk/-/ao-sync-sdk-1.1.26.tgz#30ac013417f3b915aafac92e93aa8f6c6cdfa02b"
+  integrity sha512-h9PvzZnNKRRnjw8mEAqfOp5RvQaIKWTRCGcXP1aM+FuiZKBqz4+mfgEdV/AtPkiz9DTXRMw0ftldPv6Z1D7wzg==
   dependencies:
     "@fontsource/sora" "^5.2.5"
     arconnect "^1.0.4"
@@ -3064,13 +3064,13 @@
     qrcode "^1.5.4"
     uuid "^11.0.3"
 
-"@vela-ventures/aosync-strategy@^1.0.10":
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/@vela-ventures/aosync-strategy/-/aosync-strategy-1.0.10.tgz#11e48e6d81823681ded85072b52c772767c7d402"
-  integrity sha512-FuAiRXlx9sx2Z8K4LSXSTpStQS5TCEPu7LxbiwztzcdO5zyBgO3PSq3Eo5cpDLfwEaQrXfnig7NwlDMS6WR+Kg==
+"@vela-ventures/aosync-strategy@^1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@vela-ventures/aosync-strategy/-/aosync-strategy-1.0.11.tgz#e06be49088d39a947dbf127cba30c81713c005c6"
+  integrity sha512-P05SRv74XIgxU8trDp/HtkgENbgVRGhLBmn0AC8wn74kKl0e6Be+Xz6aWk445FQeB+iZigr+YsAoEywfsC7pXA==
   dependencies:
     "@arweave-wallet-kit/core" "^0.1.1"
-    "@vela-ventures/ao-sync-sdk" "^1.1.25"
+    "@vela-ventures/ao-sync-sdk" "^1.1.26"
 
 "@vitejs/plugin-react@^4.3.1":
   version "4.3.1"

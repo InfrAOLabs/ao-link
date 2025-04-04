@@ -1,5 +1,6 @@
 "use client"
 
+import { ConnectButton } from "@arweave-wallet-kit/react"
 import {
   AppBar,
   Container,
@@ -13,7 +14,6 @@ import {
   Box,
 } from "@mui/material"
 import { Moon, Sun } from "@phosphor-icons/react"
-import { ConnectButton } from "arweave-wallet-kit"
 
 import { Link } from "react-router-dom"
 

@@ -1,3 +1,4 @@
+import { useActiveAddress } from "@arweave-wallet-kit/react"
 import { Box, Button, CircularProgress, Paper, Stack, Typography } from "@mui/material"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
 import { createDataItemSigner, dryrun, message, result } from "@permaweb/aoconnect"
@@ -5,7 +6,6 @@ import { DryRunResult, MessageInput } from "@permaweb/aoconnect/dist/lib/dryrun"
 import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { Asterisk } from "@phosphor-icons/react"
 
-import { useActiveAddress } from "arweave-wallet-kit"
 import React, { useCallback, useState } from "react"
 
 import { CodeEditor } from "@/components/CodeEditor"

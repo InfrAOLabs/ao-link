@@ -22,6 +22,8 @@ export function IdBlock(props: IdBlockProps) {
   if (href) {
     return (
       <Box
+        display="flex"
+        alignItems="center"
         sx={{
           fill: "none",
           "&:hover": { fill: "var(--mui-palette-text-secondary)" },

@@ -25,7 +25,14 @@ export const getSwap = async (msgId: string) => {
   try {
     const tree = await fetchMessageGraph({
       msgId,
-      actions: ["Order-Confirmation", "Order-Error", "Transfer", "Credit-Notice", "Debit-Notice"],
+      actions: [
+        "Order-Confirmation",
+        "Order-Error",
+        "Transfer",
+        "Credit-Notice",
+        "Debit-Notice",
+        "Transfer-Error",
+      ],
       startFromPushedFor: true,
       ignoreRepeatingMessages: true,
     })

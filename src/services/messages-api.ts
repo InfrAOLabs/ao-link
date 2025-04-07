@@ -454,11 +454,19 @@ const listToStr = (strs: string[]): string => {
   }, "")
 }
 
-const resultingMessagesIdsQuery = (
-  recipient: string,
-  actions: string[] = [],
+interface ResultingMessagesIdsQueryArgs {
+  recipient: string
+  actions?: string[]
+  fromProcess?: string
+  useOldRefSymbol: boolean
+}
+
+const resultingMessagesIdsQuery = ({
+  recipient,
+  actions = [],
+  fromProcess,
   useOldRefSymbol = false,
-) => gql`
+}: ResultingMessagesIdsQueryArgs) => gql`
   query (
     $msgRefs: [String!]!
     $limit: Int!
@@ -472,6 +480,7 @@ const resultingMessagesIdsQuery = (
       recipients: ["${recipient}"]
       tags: [
         { name: "${useOldRefSymbol ? "Ref_" : "Reference"}", values: $msgRefs },
+        ${fromProcess ? `{ "From-Process": "${fromProcess}" }` : ""}
         ${actions.length > 0 ? `{ name: "Action", values: [${listToStr(actions)}] }` : ""}
       ]
       ${AO_MIN_INGESTED_AT}
@@ -488,6 +497,7 @@ export interface GetResultingMessagesNodesArgs {
   limit: number
   cursor: string
   ascending: boolean
+  fromProcess?: string
   actions?: string[]
   msgRefs?: string[]
   useOldRefSymbol: boolean
@@ -498,17 +508,21 @@ export const getResultingMessagesNodes = async ({
   limit = 100,
   cursor = "",
   ascending,
+  fromProcess,
   actions,
   msgRefs,
   useOldRefSymbol = false,
 }: GetResultingMessagesNodesArgs) => {
   const result = await goldsky
-    .query<TransactionsResponse>(resultingMessagesIdsQuery(recipient, actions, useOldRefSymbol), {
-      limit,
-      cursor,
-      sortOrder: ascending ? "HEIGHT_ASC" : "INGESTED_AT_DESC",
-      msgRefs: msgRefs || [],
-    })
+    .query<TransactionsResponse>(
+      resultingMessagesIdsQuery({ recipient, actions, fromProcess, useOldRefSymbol }),
+      {
+        limit,
+        cursor,
+        sortOrder: ascending ? "HEIGHT_ASC" : "INGESTED_AT_DESC",
+        msgRefs: msgRefs || [],
+      },
+    )
     .toPromise()
 
   const { data } = result
@@ -919,6 +933,7 @@ export const fetchMessageGraph = async ({
   actions,
   startFromPushedFor = false,
   ignoreRepeatingMessages = false,
+  depth = 0,
 }: FetchMessageGraphArgs): Promise<MessageTree | null> => {
   try {
     let originalMsg = await getMessageById(msgId)
@@ -969,6 +984,10 @@ export const fetchMessageGraph = async ({
         limit: 100,
         cursor: "",
         actions,
+        // TODO(Nikita): If you specify from-proess this way
+        //               some of the messages dissapear, although they seem
+        //               completely valid. Investigate, then enable this feature
+        // fromProcess: depth > 0 ? originalMsg.to : undefined,
         ascending: false,
         msgRefs: refTag ? [refTag.value] : [],
         useOldRefSymbol: shouldUseOldRefSymbol,
@@ -987,6 +1006,7 @@ export const fetchMessageGraph = async ({
           msgId: nodeId,
           actions,
           ignoreRepeatingMessages,
+          depth: depth + 1,
         })
 
         leafs.push(leaf)

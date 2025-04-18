@@ -12,6 +12,7 @@ import { AoMessage } from "@/types"
 import { truncateId } from "@/utils/data-utils"
 import { formatFullDate, formatRelative } from "@/utils/date-utils"
 import { formatNumber, formatSize } from "@/utils/number-utils"
+import { GATEWAY_DATA } from "@/config/gateway"
 
 type EvalMessagesTableRowProps = {
   item: AoMessage
@@ -38,7 +39,7 @@ export function EvalMessagesTableRow(props: EvalMessagesTableRowProps) {
     if (message.type === "Checkpoint") {
       setData("Message too long")
     } else {
-      fetch(`https://arweave.net/${message.id}`)
+      fetch(`${GATEWAY_DATA}/${message.id}`)
         .then((res) => res.text())
         .then(setData)
     }

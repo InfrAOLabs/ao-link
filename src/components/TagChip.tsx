@@ -5,11 +5,13 @@ import { getColorFromText } from "@/utils/color-utils"
 
 import { MonoFontFF } from "./RootLayout/fonts"
 import { Check, Copy } from "@phosphor-icons/react"
+import { isArweaveId } from "@/utils/utils"
 
 export function TagChip(props: TypographyProps & { name: string; value: string }) {
   const { name, value } = props
 
   const [copied, setCopied] = React.useState(false)
+  const valuesIsArweaveAddress = isArweaveId(value)
 
   return (
     <Typography
@@ -21,7 +23,20 @@ export function TagChip(props: TypographyProps & { name: string; value: string }
       variant="caption"
       fontFamily={MonoFontFF}
     >
-      {name}:{value}
+      {valuesIsArweaveAddress ? (
+        <a
+          href={`/#/entity/${value}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "none", color: "inherit" }}
+        >
+          {name}:{value}
+        </a>
+      ) : (
+        <span>
+          {name}:{value}
+        </span>
+      )}
       <IconButton
         onClick={(e) => {
           e.stopPropagation()

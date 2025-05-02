@@ -1,6 +1,6 @@
 // ====== CONFIGURATION OPTIONS ======
 // Set this to false to disable fallback and always use primary randao endpoint
-const ENABLE_FALLBACK = false;
+const ENABLE_FALLBACK = true;
 
 // ====== IMPORTS ======
 // Import everything we need from the original package so we can re-export it

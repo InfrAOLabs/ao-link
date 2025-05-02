@@ -1,4 +1,3 @@
-import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import React, { memo, useMemo } from "react"
 
 import { EntityMessagesTable } from "@/app/entity/[slug]/EntityMessagesTable"
@@ -6,6 +5,7 @@ import { LoadingSkeletons } from "@/components/LoadingSkeletons"
 import { getResultingMessages } from "@/services/messages-api"
 import { AoMessage } from "@/types"
 import { parseAoMessageFromCU } from "@/utils/arweave-utils"
+import { MessageResult } from "@/config/ao.Connection"
 
 type Props = {
   message: AoMessage

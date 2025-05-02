@@ -1,5 +1,5 @@
-import { connect } from "@permaweb/aoconnect/browser"
 
+import { connect } from "./config/ao.Connection"
 import { arIoCu } from "./services/arns-api"
 
 export const tokenCUs: Record<string, ReturnType<typeof connect> | undefined> = {

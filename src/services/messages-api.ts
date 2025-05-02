@@ -1,5 +1,3 @@
-import { result } from "@permaweb/aoconnect/browser"
-import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { gql } from "urql"
 
 import { goldsky } from "./graphql-client"
@@ -8,6 +6,7 @@ import { AoMessage, NetworkStat, TokenTransferMessage, TransactionsResponse } fr
 import { messageFields, parseAoMessage, parseTokenEvent } from "@/utils/arweave-utils"
 
 import { isArweaveId } from "@/utils/utils"
+import { MessageResult, result } from "@/config/ao.Connection"
 
 // const AO_NETWORK_IDENTIFIER = '{ name: "SDK", values: ["aoconnect"] }'
 // const AO_NETWORK_IDENTIFIER = '{ name: "Variant", values: ["ao.TN.1"] }'

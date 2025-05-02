@@ -1,5 +1,4 @@
-import { DryRunResult } from "@permaweb/aoconnect/dist/lib/dryrun"
-import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
+import { DryRunResult, MessageResult } from "@/config/ao.Connection"
 
 /**
  * Prettifies a message/dryrun result by parsing any stringified JSON found in the `Output.data` or `Messages[].Data` fields

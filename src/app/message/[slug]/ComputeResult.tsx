@@ -1,8 +1,6 @@
 "use client"
 
 import { Button, CircularProgress, Paper, Stack, Typography } from "@mui/material"
-import { result } from "@permaweb/aoconnect"
-import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { Asterisk } from "@phosphor-icons/react"
 import React, { useCallback, useEffect, useState } from "react"
 
@@ -10,6 +8,7 @@ import { FormattedDataBlock } from "@/components/FormattedDataBlock"
 import { getMessageById } from "@/services/messages-api"
 import { AoMessage } from "@/types"
 import { prettifyResult } from "@/utils/ao-utils"
+import { MessageResult, result } from "@/config/ao.Connection"
 
 type ComputeResultProps = {
   messageId: string

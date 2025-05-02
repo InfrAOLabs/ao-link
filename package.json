@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "predeploy": "rm -rf ./dist-* && yarn build",
-    "deploy": "permaweb-deploy --ant-process My3zjcGNtaOaZntPCLXZjIKAzOqluRRHCIUh9mUzzAo"
+    "deploy": "npm run build && permaweb-deploy --deploy-folder ./dist --ant-process $DEPLOY_ANT_PROCESS_ID",
+    "deploy-undername": "npm run build && permaweb-deploy --deploy-folder ./dist --ant-process $DEPLOY_ANT_PROCESS_ID --undername $DEPLOY_UNDERNAME"
   },
   "dependencies": {
     "@arweave-wallet-kit/browser-wallet-strategy": "^0.1.1",

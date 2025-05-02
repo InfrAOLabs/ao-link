@@ -1,7 +1,7 @@
-import { dryrun } from "@permaweb/aoconnect"
 import { gql } from "urql"
 
 import { AoMessage, ArweaveBlock, BlockEdge, TokenTransferMessage, TransactionEdge } from "../types"
+import { dryrun } from "@/config/ao.Connection"
 
 export const messageFields = gql`
   fragment MessageFields on TransactionConnection {

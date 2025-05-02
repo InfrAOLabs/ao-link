@@ -1,9 +1,10 @@
-import { connect } from "@permaweb/aoconnect/browser"
 
+import { connect } from "@/config/ao.Connection"
 import { isArweaveId } from "@/utils/utils"
 
 export const arIoCu = connect({
   CU_URL: "https://cu.ardrive.io",
+  MODE: 'legacy'
 })
 
 export async function getOwnedDomains(entityId: string): Promise<string[]> {

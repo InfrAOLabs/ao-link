@@ -18,7 +18,7 @@ export function FetchInfoHandler(props: FetchInfoHandlerProps) {
   const handleFetch = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await fetch(`https://cu.ao-testnet.xyz/dry-run?process-id=${processId}`, {
+      const result = await fetch(`https://ur-cu.randao.net/dry-run?process-id=${processId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

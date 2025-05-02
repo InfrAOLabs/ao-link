@@ -1,7 +1,6 @@
 import { Box, CircularProgress, Paper, Stack, Tabs, Tooltip, Typography } from "@mui/material"
 
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
-import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { useQuery } from "@tanstack/react-query"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 
@@ -29,6 +28,7 @@ import { formatFullDate, formatRelative } from "@/utils/date-utils"
 
 import { formatNumber } from "@/utils/number-utils"
 import { isArweaveId } from "@/utils/utils"
+import { MessageResult } from "@/config/ao.Connection"
 
 const defaultTab = "resulting"
 

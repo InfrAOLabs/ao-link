@@ -1,6 +1,5 @@
 import { Box, Collapse, IconButton, Paper, TableCell, TableRow, Tooltip } from "@mui/material"
 
-import { result } from "@permaweb/aoconnect"
 import { CaretDown, CaretRight, CheckCircle, MinusCircle, Question } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
 
@@ -13,6 +12,7 @@ import { truncateId } from "@/utils/data-utils"
 import { formatFullDate, formatRelative } from "@/utils/date-utils"
 import { formatNumber, formatSize } from "@/utils/number-utils"
 import { GATEWAY_DATA } from "@/config/gateway"
+import { result } from "@/config/ao.Connection"
 
 type EvalMessagesTableRowProps = {
   item: AoMessage

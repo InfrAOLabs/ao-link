@@ -11,8 +11,9 @@ import {
   Typography,
 } from "@mui/material"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
+
 import { CodeEditor } from "@/components/CodeEditor"
-import { FormattedDataBlock } from "@/components/FormattedDataBlock"
+import { useActiveAddress } from "@arweave-wallet-kit/react"
 
 // SVG dropdown icon
 const ChevronDownIcon = () => (
@@ -39,15 +40,51 @@ const truncateMiddle = (str: string, front = 8, back = 8) => {
   return `${str.slice(0, front)}...${str.slice(-back)}`
 }
 
-export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) => void }) {
+interface RequestHistoryPanelProps {
+  onSelect: (payload: string) => void
+}
+
+export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
+  const address = useActiveAddress()
+  const isWalletConnected = Boolean(address)
+
   const [history, setHistory] = useState<any[]>([])
   const [expanded, setExpanded] = useState<string | false>(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
+  // Load history from localStorage
+  const loadHistory = () => {
+    const raw = localStorage.getItem("dryRunHistory") || "[]"
+    try {
+      const data = JSON.parse(raw)
+      setHistory(Array.isArray(data) ? data.slice().reverse() : [])
+    } catch {
+      setHistory([])
+    }
+  }
+
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
-    setHistory(data.reverse())
-  }, [])
+    if (!isWalletConnected) return
+
+    // Initial load when wallet connects
+    loadHistory()
+
+    // Listen for localStorage changes from other tabs
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "dryRunHistory") {
+        loadHistory()
+      }
+    }
+    window.addEventListener("storage", handleStorage)
+
+    // Poll same-tab changes every 5 seconds
+    const interval = setInterval(loadHistory, 5000)
+
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      clearInterval(interval)
+    }
+  }, [isWalletConnected])
 
   const clearHistory = () => {
     localStorage.removeItem("dryRunHistory")
@@ -107,6 +144,11 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
     }
   }
 
+  // Don't render if wallet isn't connected
+  if (!isWalletConnected) {
+    return null
+  }
+
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -164,11 +206,11 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
                       Result
                     </Typography>
                     <Paper sx={{ height: "100%", overflow: "auto" }}>
-                      <FormattedDataBlock
-                        component={Paper}
-                        data={JSON.stringify(item.response, null, 2)}
-                        placeholder=""
-                        sx={{ height: "100%", overflow: "auto" }}
+                      <CodeEditor
+                        height="100%"
+                        defaultLanguage="json"
+                        defaultValue={JSON.stringify(item.response, null, 2)}
+                        options={{ readOnly: true }}
                       />
                     </Paper>
                   </Grid2>

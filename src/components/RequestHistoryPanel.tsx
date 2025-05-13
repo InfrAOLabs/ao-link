@@ -6,19 +6,23 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
   Paper,
   Stack,
   Typography,
-  Tooltip,
 } from "@mui/material"
-import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
 import { CodeEditor } from "@/components/CodeEditor"
 import { FormattedDataBlock } from "@/components/FormattedDataBlock"
 
+// SVG dropdown icon
 const ChevronDownIcon = () => (
-  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" style={{ display: "block" }}>
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+    style={{ display: "block" }}
+  >
     <path
       stroke="currentColor"
       strokeLinecap="round"
@@ -29,6 +33,7 @@ const ChevronDownIcon = () => (
   </svg>
 )
 
+// Helper to truncate long strings
 const truncateMiddle = (str: string, front = 8, back = 8) => {
   if (!str || str.length <= front + back) return str
   return `${str.slice(0, front)}...${str.slice(-back)}`
@@ -40,14 +45,9 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const stored = JSON.parse(localStorage.getItem("dryRunHistory") || "[]").reverse()
-      if (JSON.stringify(stored) !== JSON.stringify(history)) {
-        setHistory(stored)
-      }
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [history])
+    const data = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
+    setHistory(data.reverse())
+  }, [])
 
   const clearHistory = () => {
     localStorage.removeItem("dryRunHistory")
@@ -77,7 +77,9 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
             <Typography variant="body2" fontWeight={500}>
               {token} Balance → {truncateMiddle(recipient)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">Balance: {balance}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Balance: {balance}
+            </Typography>
           </>
         )
       }
@@ -85,26 +87,24 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
         const name = resultTags.Name || resultTags.Ticker || "-"
         return (
           <>
-            <Typography variant="body2" fontWeight={500}>Info → {name}</Typography>
+            <Typography variant="body2" fontWeight={500}>
+              Info → {name}
+            </Typography>
           </>
         )
       }
       default:
         return (
           <>
-            <Typography variant="body2" fontWeight={500}>{action}</Typography>
+            <Typography variant="body2" fontWeight={500}>
+              {action}
+            </Typography>
             <Typography variant="caption" color="text.secondary">
               No parsed data available
             </Typography>
           </>
         )
     }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      console.log("Copied to clipboard!")
-    })
   }
 
   return (
@@ -118,7 +118,9 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
       <Divider sx={{ my: 1 }} />
 
       {history.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No history yet.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          No history yet.
+        </Typography>
       ) : (
         history.map((item) => {
           const isDimmed = hoveredId !== null && hoveredId !== item.id
@@ -145,17 +147,9 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
               <AccordionDetails sx={{ height: 400 }}>
                 <Grid2 container spacing={2} sx={{ height: "100%" }}>
                   <Grid2 xs={12} md={6} sx={{ height: "100%" }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography variant="caption" gutterBottom>Query</Typography>
-                      <Tooltip title="Copy to clipboard" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => copyToClipboard(JSON.stringify(item.request, null, 2))}
-                        >
-                          <ContentCopyIcon fontSize="inherit" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+                    <Typography variant="caption" gutterBottom>
+                      Query
+                    </Typography>
                     <Paper sx={{ height: "100%", overflow: "auto" }}>
                       <CodeEditor
                         height="100%"
@@ -166,25 +160,17 @@ export function RequestHistoryPanel({ onSelect }: { onSelect: (payload: string) 
                     </Paper>
                   </Grid2>
                   <Grid2 xs={12} md={6} sx={{ height: "100%" }}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography variant="caption" gutterBottom>Result</Typography>
-                      <Tooltip title="Copy to clipboard" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => copyToClipboard(JSON.stringify(item.response, null, 2))}
-                        >
-                          <ContentCopyIcon fontSize="inherit" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+                    <Typography variant="caption" gutterBottom>
+                      Result
+                    </Typography>
                     <Paper sx={{ height: "100%", overflow: "auto" }}>
-                      <CodeEditor
-                      height="100%"
-                      defaultLanguage="json"
-                      defaultValue={JSON.stringify(item.response, null, 2)}
-                      options={{ readOnly: true }}
+                      <FormattedDataBlock
+                        component={Paper}
+                        data={JSON.stringify(item.response, null, 2)}
+                        placeholder=""
+                        sx={{ height: "100%", overflow: "auto" }}
                       />
-                  </Paper>
+                    </Paper>
                   </Grid2>
                 </Grid2>
               </AccordionDetails>

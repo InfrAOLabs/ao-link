@@ -13,7 +13,6 @@ import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
 import { CodeEditor } from "@/components/CodeEditor"
 import { useActiveAddress } from "@arweave-wallet-kit/react"
 
-// SVG dropdown icon
 const ChevronDownIcon = () => (
   <svg width="24" height="24" fill="none" viewBox="0 0 24 24" style={{ display: "block" }}>
     <path
@@ -26,7 +25,6 @@ const ChevronDownIcon = () => (
   </svg>
 )
 
-// Helper to truncate long strings
 const truncateMiddle = (str: string, front = 8, back = 8) => {
   if (!str || str.length <= front + back) return str
   return `${str.slice(0, front)}...${str.slice(-back)}`
@@ -37,7 +35,6 @@ interface RequestHistoryPanelProps {
 }
 
 export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
-  // Hooks must always run unconditionally:
   const address = useActiveAddress()
   const [history, setHistory] = useState<any[]>([])
   const [expanded, setExpanded] = useState<string | false>(false)
@@ -85,7 +82,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         }, {})
       : {}
 
-    // Transfer
     if (reqTags.Action === "Transfer") {
       const recipient = reqTags.Recipient || "-"
       const qty = reqTags.Quantity || "-"
@@ -101,7 +97,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
       )
     }
 
-    // Balance / Info
     switch (reqTags.Action) {
       case "Balance": {
         const recipient = reqTags.Recipient || resTags.Account || "-"
@@ -140,7 +135,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
     }
   }
 
-  // Now safely bail out of rendering if wallet is disconnected:
   if (!address) {
     return null
   }

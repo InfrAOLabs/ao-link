@@ -55,23 +55,35 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
           id: crypto.randomUUID(),
           processId,
           request: msg,
-          response: json,              
+          response: json,
           timestamp: new Date().toISOString()
         }
 
         const existing = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
         const updated = [...existing.slice(-9), newItem]
         localStorage.setItem("dryRunHistory", JSON.stringify(updated))
-    
-      } else {
-        let msgId = await message({ ...msg, signer: createDataItemSigner(window.arweaveWallet) })
-        json = await result({
-          message: msgId,
-          process: processId,
-        })
-        setMsgId(msgId)
-      }
 
+    } else {
+      // “Send message” branch
+      const sentMsgId = await message({
+        ...msg,
+        signer: createDataItemSigner(window.arweaveWallet),
+      })
+      json = await result({ message: sentMsgId, process: processId })
+      setMsgId(sentMsgId)
+
+      const newItem = {
+        id: crypto.randomUUID(),
+        processId,
+        request: msg,
+        response: json,
+        timestamp: new Date().toISOString(),
+        sentMessageId: sentMsgId,
+      }
+      const existing = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
+      const updated = [...existing.slice(-9), newItem]
+      localStorage.setItem("dryRunHistory", JSON.stringify(updated))
+    }
       setResponse(JSON.stringify(prettifyResult(json), null, 2))
     } catch (error) {
       setResponse(JSON.stringify({ error: `Error fetching info: ${String(error)}` }, null, 2))

@@ -3,7 +3,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Box,
   Button,
   Divider,
   Paper,
@@ -11,19 +10,12 @@ import {
   Typography,
 } from "@mui/material"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
-
 import { CodeEditor } from "@/components/CodeEditor"
 import { useActiveAddress } from "@arweave-wallet-kit/react"
 
 // SVG dropdown icon
 const ChevronDownIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    fill="none"
-    viewBox="0 0 24 24"
-    style={{ display: "block" }}
-  >
+  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" style={{ display: "block" }}>
     <path
       stroke="currentColor"
       strokeLinecap="round"
@@ -46,14 +38,13 @@ interface RequestHistoryPanelProps {
 
 export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
   const address = useActiveAddress()
-  const isWalletConnected = Boolean(address)
+  if (!address) return null
 
   const [history, setHistory] = useState<any[]>([])
   const [expanded, setExpanded] = useState<string | false>(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  // Load history from localStorage
-  const loadHistory = () => {
+    const loadHistory = (_?: StorageEvent) => {
     const raw = localStorage.getItem("dryRunHistory") || "[]"
     try {
       const data = JSON.parse(raw)
@@ -64,51 +55,126 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
   }
 
   useEffect(() => {
-    if (!isWalletConnected) return
-
-    // Initial load when wallet connects
     loadHistory()
-
-    // Listen for localStorage changes from other tabs
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === "dryRunHistory") {
-        loadHistory()
-      }
-    }
-    window.addEventListener("storage", handleStorage)
-
-    // Poll same-tab changes every 5 seconds
-    const interval = setInterval(loadHistory, 5000)
-
+    window.addEventListener("storage", loadHistory)
+    const handle = setInterval(loadHistory, 5000)
     return () => {
-      window.removeEventListener("storage", handleStorage)
-      clearInterval(interval)
+      window.removeEventListener("storage", loadHistory)
+      clearInterval(handle)
     }
-  }, [isWalletConnected])
+  }, [])
 
   const clearHistory = () => {
     localStorage.removeItem("dryRunHistory")
     setHistory([])
   }
 
-  const handleChange = (id: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
+  const handleChange = (id: string) => (_: any, isExpanded: boolean) =>
     setExpanded(isExpanded ? id : false)
-  }
 
   const renderSummary = (item: any) => {
-    const tags: Record<string, string> = {}
-    ;(item.request.tags || []).forEach((t: any) => (tags[t.name] = t.value))
+    const reqTags = (item.request.tags || []).reduce((acc: any, t: any) => {
+      acc[t.name] = t.value
+      return acc
+    }, {})
 
-    const msg = item.response?.Messages?.[0] || {}
-    const resultTags: Record<string, any> = {}
-    if (Array.isArray(msg.Tags)) msg.Tags.forEach((t: any) => (resultTags[t.name] = t.value))
+    const firstMsg = item.response?.Messages?.[0] || {}
+    const resTags = Array.isArray(firstMsg.Tags)
+      ? firstMsg.Tags.reduce((acc: any, t: any) => {
+          acc[t.name] = t.value
+          return acc
+        }, {})
+      : {}
 
-    const action = tags.Action || "Unknown"
-    switch (action) {
+    // --- New governance actions ---
+    switch (reqTags.Action) {
+      case "Set-Transfer-Restrictions": {
+        const enabled = reqTags.Enabled === "true"
+        return (
+          <>
+            <Typography variant="body2" fontWeight={500}>
+              {enabled ? "Enable" : "Disable"} Transfer Restrictions
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {enabled ? "Restrictions on" : "Restrictions off"}
+            </Typography>
+          </>
+        )
+      }
+      case "Add-Allowed-Sender": {
+        const addr = reqTags.Address || "-"
+        return (
+          <>
+            <Typography variant="body2" fontWeight={500}>
+              Add Allowed Sender → {truncateMiddle(addr)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Address: {truncateMiddle(addr)}
+            </Typography>
+          </>
+        )
+      }
+      case "Add-Allowed-Sender-Batch": {
+        const addrs = Array.isArray(reqTags.Addresses)
+          ? (reqTags.Addresses as string[])
+          : JSON.parse(reqTags.Addresses || "[]")
+        return (
+          <>
+            <Typography variant="body2" fontWeight={500}>
+              Add Allowed Senders (Batch) → {addrs.length} address
+              {addrs.length !== 1 ? "es" : ""}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {addrs.map(a => truncateMiddle(a)).join(", ")}
+            </Typography>
+          </>
+        )
+      }
+      case "Remove-Allowed-Sender": {
+        const addr = reqTags.Address || "-"
+        return (
+          <>
+            <Typography variant="body2" fontWeight={500}>
+              Remove Allowed Sender → {truncateMiddle(addr)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Address: {truncateMiddle(addr)}
+            </Typography>
+          </>
+        )
+      }
+      case "Get-Allowed-Senders": {
+        return (
+          <Typography variant="body2" fontWeight={500}>
+            Get Allowed Senders
+          </Typography>
+        )
+      }
+    }
+    // --- end governance actions ---
+
+    // 1) Transfer
+    if (reqTags.Action === "Transfer") {
+      const recipient = reqTags.Recipient || "-"
+      const qty = reqTags.Quantity || "-"
+      return (
+        <>
+          <Typography variant="body2" fontWeight={500}>
+            Transfer → {truncateMiddle(recipient)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Quantity: {qty}
+          </Typography>
+        </>
+      )
+    }
+
+    // 2) Balance / Info fallback
+    switch (reqTags.Action) {
       case "Balance": {
-        const recipient = tags.Recipient || resultTags.Account || "-"
-        const token = resultTags.Ticker || "-"
-        const balance = resultTags.Balance ?? msg.Data ?? "-"
+        const recipient = reqTags.Recipient || resTags.Account || "-"
+        const token = resTags.Ticker || "-"
+        const balance = resTags.Balance ?? firstMsg.Data ?? "-"
         return (
           <>
             <Typography variant="body2" fontWeight={500}>
@@ -121,20 +187,18 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         )
       }
       case "Info": {
-        const name = resultTags.Name || resultTags.Ticker || "-"
+        const name = resTags.Name || resTags.Ticker || "-"
         return (
-          <>
-            <Typography variant="body2" fontWeight={500}>
-              Info → {name}
-            </Typography>
-          </>
+          <Typography variant="body2" fontWeight={500}>
+            Info → {name}
+          </Typography>
         )
       }
       default:
         return (
           <>
             <Typography variant="body2" fontWeight={500}>
-              {action}
+              {reqTags.Action}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               No parsed data available
@@ -142,11 +206,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
           </>
         )
     }
-  }
-
-  // Don't render if wallet isn't connected
-  if (!isWalletConnected) {
-    return null
   }
 
   return (
@@ -165,7 +224,7 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         </Typography>
       ) : (
         history.map((item) => {
-          const isDimmed = hoveredId !== null && hoveredId !== item.id
+          const dimmed = hoveredId !== null && hoveredId !== item.id
           return (
             <Accordion
               key={item.id}
@@ -173,7 +232,7 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
               onChange={handleChange(item.id)}
               disableGutters
               elevation={0}
-              sx={{ mb: 1, opacity: isDimmed ? 0.3 : 1, transition: "opacity 0.2s" }}
+              sx={{ mb: 1, opacity: dimmed ? 0.3 : 1, transition: "opacity 0.2s" }}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
@@ -185,7 +244,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
                   </Typography>
                 </Stack>
               </AccordionSummary>
-
               <AccordionDetails sx={{ height: 400 }}>
                 <Grid2 container spacing={2} sx={{ height: "100%" }}>
                   <Grid2 xs={12} md={6} sx={{ height: "100%" }}>

@@ -37,14 +37,13 @@ interface RequestHistoryPanelProps {
 }
 
 export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
+  // Hooks must always run unconditionally:
   const address = useActiveAddress()
-  if (!address) return null
-
   const [history, setHistory] = useState<any[]>([])
   const [expanded, setExpanded] = useState<string | false>(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-    const loadHistory = (_?: StorageEvent) => {
+  const loadHistory = () => {
     const raw = localStorage.getItem("dryRunHistory") || "[]"
     try {
       const data = JSON.parse(raw)
@@ -86,74 +85,7 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         }, {})
       : {}
 
-    // --- New governance actions ---
-    switch (reqTags.Action) {
-      case "Set-Transfer-Restrictions": {
-        const enabled = reqTags.Enabled === "true"
-        return (
-          <>
-            <Typography variant="body2" fontWeight={500}>
-              {enabled ? "Enable" : "Disable"} Transfer Restrictions
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {enabled ? "Restrictions on" : "Restrictions off"}
-            </Typography>
-          </>
-        )
-      }
-      case "Add-Allowed-Sender": {
-        const addr = reqTags.Address || "-"
-        return (
-          <>
-            <Typography variant="body2" fontWeight={500}>
-              Add Allowed Sender → {truncateMiddle(addr)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Address: {truncateMiddle(addr)}
-            </Typography>
-          </>
-        )
-      }
-      case "Add-Allowed-Sender-Batch": {
-        const addrs = Array.isArray(reqTags.Addresses)
-          ? (reqTags.Addresses as string[])
-          : JSON.parse(reqTags.Addresses || "[]")
-        return (
-          <>
-            <Typography variant="body2" fontWeight={500}>
-              Add Allowed Senders (Batch) → {addrs.length} address
-              {addrs.length !== 1 ? "es" : ""}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {addrs.map(a => truncateMiddle(a)).join(", ")}
-            </Typography>
-          </>
-        )
-      }
-      case "Remove-Allowed-Sender": {
-        const addr = reqTags.Address || "-"
-        return (
-          <>
-            <Typography variant="body2" fontWeight={500}>
-              Remove Allowed Sender → {truncateMiddle(addr)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Address: {truncateMiddle(addr)}
-            </Typography>
-          </>
-        )
-      }
-      case "Get-Allowed-Senders": {
-        return (
-          <Typography variant="body2" fontWeight={500}>
-            Get Allowed Senders
-          </Typography>
-        )
-      }
-    }
-    // --- end governance actions ---
-
-    // 1) Transfer
+    // Transfer
     if (reqTags.Action === "Transfer") {
       const recipient = reqTags.Recipient || "-"
       const qty = reqTags.Quantity || "-"
@@ -169,11 +101,11 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
       )
     }
 
-    // 2) Balance / Info fallback
+    // Balance / Info
     switch (reqTags.Action) {
       case "Balance": {
         const recipient = reqTags.Recipient || resTags.Account || "-"
-        const token = resTags.Ticker || "-"
+        const token = resTags.Ticker || ""
         const balance = resTags.Balance ?? firstMsg.Data ?? "-"
         return (
           <>
@@ -206,6 +138,11 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
           </>
         )
     }
+  }
+
+  // Now safely bail out of rendering if wallet is disconnected:
+  if (!address) {
+    return null
   }
 
   return (

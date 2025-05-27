@@ -1,3 +1,4 @@
+import React, { useCallback, useState } from "react"
 import { useActiveAddress } from "@arweave-wallet-kit/react"
 import { Box, Button, CircularProgress, Paper, Stack, Typography } from "@mui/material"
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
@@ -5,9 +6,6 @@ import { createDataItemSigner, dryrun, message, result } from "@permaweb/aoconne
 import { DryRunResult, MessageInput } from "@permaweb/aoconnect/dist/lib/dryrun"
 import { MessageResult } from "@permaweb/aoconnect/dist/lib/result"
 import { Asterisk } from "@phosphor-icons/react"
-import { RequestHistoryPanel } from "@/components/RequestHistoryPanel"
-
-import React, { useCallback, useState } from "react"
 
 import { CodeEditor } from "@/components/CodeEditor"
 import { FormattedDataBlock } from "@/components/FormattedDataBlock"
@@ -15,6 +13,8 @@ import { IdBlock } from "@/components/IdBlock"
 import { MonoFontFF } from "@/components/RootLayout/fonts"
 import { prettifyResult } from "@/utils/ao-utils"
 import { truncateId } from "@/utils/data-utils"
+
+import { RequestHistoryPanel, dryRunHistoryStore } from "@/components/RequestHistoryPanel"
 
 type ProcessInteractionProps = {
   processId: string
@@ -28,7 +28,7 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
   const [loading, setLoading] = useState(false)
   const activeAddress = useActiveAddress()
 
-  const [query, setQuery] = useState<string | undefined>(
+  const [query, setQuery] = useState<string>(
     JSON.stringify(
       {
         process: processId,
@@ -44,9 +44,8 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
     setLoading(true)
     setMsgId("")
     try {
-      const msg = JSON.parse(query as string) as MessageInput
-
-      let json: DryRunResult | MessageResult | undefined
+      const msg = JSON.parse(query) as MessageInput
+      let json: DryRunResult | MessageResult
 
       if (readOnly) {
         json = await dryrun(msg)
@@ -56,37 +55,39 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
           processId,
           request: msg,
           response: json,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }
 
-        const existing = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
-        const updated = [...existing.slice(-9), newItem]
-        localStorage.setItem("dryRunHistory", JSON.stringify(updated))
+        const existing = dryRunHistoryStore.get() || []
+        const updated = [...existing, newItem].slice(-10)
+        dryRunHistoryStore.set(updated)
+      } else {
+        const sentMsgId = await message({
+          ...msg,
+          signer: createDataItemSigner(window.arweaveWallet),
+        })
+        json = await result({ message: sentMsgId, process: processId })
+        setMsgId(sentMsgId)
 
-    } else {
-      // “Send message” branch
-      const sentMsgId = await message({
-        ...msg,
-        signer: createDataItemSigner(window.arweaveWallet),
-      })
-      json = await result({ message: sentMsgId, process: processId })
-      setMsgId(sentMsgId)
+        const newItem = {
+          id: crypto.randomUUID(),
+          processId,
+          request: msg,
+          response: json,
+          timestamp: new Date().toISOString(),
+          sentMessageId: sentMsgId,
+        }
 
-      const newItem = {
-        id: crypto.randomUUID(),
-        processId,
-        request: msg,
-        response: json,
-        timestamp: new Date().toISOString(),
-        sentMessageId: sentMsgId,
+        const existing = dryRunHistoryStore.get() || []
+        const updated  = [...existing.slice(-9), newItem]
+        dryRunHistoryStore.set(updated)
       }
-      const existing = JSON.parse(localStorage.getItem("dryRunHistory") || "[]")
-      const updated = [...existing.slice(-9), newItem]
-      localStorage.setItem("dryRunHistory", JSON.stringify(updated))
-    }
+
       setResponse(JSON.stringify(prettifyResult(json), null, 2))
     } catch (error) {
-      setResponse(JSON.stringify({ error: `Error fetching info: ${String(error)}` }, null, 2))
+      setResponse(
+        JSON.stringify({ error: `Error fetching info: ${String(error)}` }, null, 2),
+      )
     }
     setLoading(false)
   }, [processId, query, readOnly])
@@ -102,7 +103,11 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
                 height={600}
                 defaultLanguage="json"
                 defaultValue={query}
-                onChange={(value) => setQuery(value)}
+                onChange={(value) => {
+                  if (typeof value === "string") {
+                    setQuery(value)
+                  }
+                }}
               />
               <Typography
                 variant="caption"
@@ -159,7 +164,7 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
         </Grid2>
 
         <Grid2 container spacing={{ xs: 1, lg: 2 }}>
-          <Grid2 xs={12} lg={6}></Grid2>
+          <Grid2 xs={12} lg={6} />
           <Grid2 xs={12} lg={6}>
             <Stack direction="row" justifyContent="space-between" gap={1} alignItems="center">
               {msgId ? (
@@ -200,9 +205,7 @@ export function ProcessInteraction(props: ProcessInteractionProps) {
                   size="small"
                   variant="contained"
                   color="secondary"
-                  onClick={() => {
-                    document.getElementById("connect-wallet-button")?.click()
-                  }}
+                  onClick={() => document.getElementById("connect-wallet-button")?.click()}
                 >
                   Connect wallet
                 </Button>

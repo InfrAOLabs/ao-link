@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import {
   Accordion,
   AccordionSummary,
@@ -12,6 +12,15 @@ import {
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2"
 import { CodeEditor } from "@/components/CodeEditor"
 import { useActiveAddress } from "@arweave-wallet-kit/react"
+import { persistentAtom } from "@nanostores/persistent"
+import { useStore } from "@nanostores/react"
+
+// persistent Nanostore for history
+export const dryRunHistoryStore = persistentAtom<any[]>(
+  "dryRunHistory",
+  [],
+  { encode: JSON.stringify, decode: JSON.parse },
+)
 
 const ChevronDownIcon = () => (
   <svg width="24" height="24" fill="none" viewBox="0 0 24 24" style={{ display: "block" }}>
@@ -35,38 +44,30 @@ interface RequestHistoryPanelProps {
 }
 
 export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
+  // 1) Hooks: always run, unconditionally
   const address = useActiveAddress()
-  const [history, setHistory] = useState<any[]>([])
+  const history = useStore(dryRunHistoryStore)
   const [expanded, setExpanded] = useState<string | false>(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const loadHistory = () => {
-    const raw = localStorage.getItem("dryRunHistory") || "[]"
-    try {
-      const data = JSON.parse(raw)
-      setHistory(Array.isArray(data) ? data.slice().reverse() : [])
-    } catch {
-      setHistory([])
-    }
+  // 2) Now safe to bail out of render if wallet disconnected
+  if (!address) {
+    return null
   }
 
-  useEffect(() => {
-    loadHistory()
-    window.addEventListener("storage", loadHistory)
-    const handle = setInterval(loadHistory, 5000)
-    return () => {
-      window.removeEventListener("storage", loadHistory)
-      clearInterval(handle)
-    }
-  }, [])
-
+  // clear all history
   const clearHistory = () => {
-    localStorage.removeItem("dryRunHistory")
-    setHistory([])
+    dryRunHistoryStore.set([])
   }
 
   const handleChange = (id: string) => (_: any, isExpanded: boolean) =>
     setExpanded(isExpanded ? id : false)
+
+  // only display the 10 newest entries
+  const displayed = history
+    .slice()
+    .reverse()
+    .slice(0, 10)
 
   const renderSummary = (item: any) => {
     const reqTags = (item.request.tags || []).reduce((acc: any, t: any) => {
@@ -82,6 +83,16 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         }, {})
       : {}
 
+    // special Info-Response case
+    if (resTags.Action === "Info-Response") {
+      return (
+        <Typography variant="body2" fontWeight={500}>
+          Info - Portfolio Agent
+        </Typography>
+      )
+    }
+
+    // Transfer
     if (reqTags.Action === "Transfer") {
       const recipient = reqTags.Recipient || "-"
       const qty = reqTags.Quantity || "-"
@@ -97,6 +108,7 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
       )
     }
 
+    // Balance / Info fallback
     switch (reqTags.Action) {
       case "Balance": {
         const recipient = reqTags.Recipient || resTags.Account || "-"
@@ -114,7 +126,20 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         )
       }
       case "Info": {
-        const name = resTags.Name || resTags.Ticker || "-"
+        // extract Agent-Type if present
+        let agentType: string | undefined
+        const rawData = firstMsg.Data
+        if (rawData && typeof rawData === "object") {
+          agentType = (rawData as Record<string, any>)["Agent-Type"]
+        } else if (typeof rawData === "string") {
+          try {
+            agentType = JSON.parse(rawData)["Agent-Type"]
+          } catch {
+            /* ignore JSON errors */
+          }
+        }
+        agentType = agentType ?? resTags["Agent-Type"]
+        const name = agentType ?? resTags.Name ?? resTags.Ticker ?? "-"
         return (
           <Typography variant="body2" fontWeight={500}>
             Info → {name}
@@ -135,10 +160,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
     }
   }
 
-  if (!address) {
-    return null
-  }
-
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -149,12 +170,12 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
       </Stack>
       <Divider sx={{ my: 1 }} />
 
-      {history.length === 0 ? (
+      {displayed.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
           No history yet.
         </Typography>
       ) : (
-        history.map((item) => {
+        displayed.map((item) => {
           const dimmed = hoveredId !== null && hoveredId !== item.id
           return (
             <Accordion

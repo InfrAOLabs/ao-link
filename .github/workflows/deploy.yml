@@ -18,6 +18,9 @@ jobs:
           name: dist
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+      
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

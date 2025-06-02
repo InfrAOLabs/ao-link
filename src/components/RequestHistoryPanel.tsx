@@ -15,7 +15,6 @@ import { useActiveAddress } from "@arweave-wallet-kit/react"
 import { persistentAtom } from "@nanostores/persistent"
 import { useStore } from "@nanostores/react"
 
-// persistent Nanostore for history
 export const dryRunHistoryStore = persistentAtom<any[]>(
   "dryRunHistory",
   [],
@@ -44,18 +43,15 @@ interface RequestHistoryPanelProps {
 }
 
 export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
-  // 1) Hooks: always run, unconditionally
   const address = useActiveAddress()
   const history = useStore(dryRunHistoryStore)
   const [expanded, setExpanded] = useState<string | false>(false)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  // 2) Now safe to bail out of render if wallet disconnected
   if (!address) {
     return null
   }
 
-  // clear all history
   const clearHistory = () => {
     dryRunHistoryStore.set([])
   }
@@ -63,7 +59,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
   const handleChange = (id: string) => (_: any, isExpanded: boolean) =>
     setExpanded(isExpanded ? id : false)
 
-  // only display the 10 newest entries
   const displayed = history
     .slice()
     .reverse()
@@ -83,6 +78,13 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
         }, {})
       : {}
 
+    if (resTags["Delegation-Oracle"]) {
+      return (
+        <Typography variant="body2" fontWeight={500}>
+          Delegation Oracle → {resTags["Delegation-Oracle"]}
+        </Typography>
+      );
+    }
     // special Info-Response case
     if (resTags.Action === "Info-Response") {
       return (
@@ -135,7 +137,6 @@ export function RequestHistoryPanel({ onSelect }: RequestHistoryPanelProps) {
           try {
             agentType = JSON.parse(rawData)["Agent-Type"]
           } catch {
-            /* ignore JSON errors */
           }
         }
         agentType = agentType ?? resTags["Agent-Type"]

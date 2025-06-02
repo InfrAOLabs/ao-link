@@ -27,8 +27,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install production deps
-        run: npm ci --omit=dev --prefer-offline --no-audit
+      - name: Install deps
+        run: npm ci --prefer-offline --no-audit
 
       - name: Deploy to Arweave
         run: npm run deploy

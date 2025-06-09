@@ -4,8 +4,7 @@ import { isArweaveId } from "@/utils/utils"
 
 export const arIoCu = connect({
   MODE: "legacy",
-  CU_URL: "https://cu.ardrive.io",
-  MODE: 'legacy'
+  CU_URL: "https://ur-cu.randao.net"
 })
 
 export async function getOwnedDomains(entityId: string): Promise<string[]> {

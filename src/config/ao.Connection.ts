@@ -121,7 +121,7 @@ type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 const PRIMARY_CONFIG: LegacyConnectOptions = {
   MODE: "legacy",
   MU_URL: "https://ur-mu.randao.net",
-  CU_URL: "https://ur-cu.randao.net",
+  CU_URL: "https://ur-pcu.randao.net",
   GATEWAY_URL: "https://arweave.net",
 };
 

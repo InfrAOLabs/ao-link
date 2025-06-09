@@ -72,7 +72,15 @@ export function TokenTransfersTableRow(props: TokenTransfersTableRowProps) {
         </Typography>
       </TableCell>
       <TableCell>
-        <TokenBlock tokenId={tokenId} tokenInfo={tokenInfo} />
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/token/${tokenId}`);
+          }}
+          style={{ display: "inline-block" }}
+        >
+          <TokenBlock tokenId={tokenId} tokenInfo={tokenInfo} />
+        </span>
       </TableCell>
       <TableCell align="right">
         <Tooltip title={formatFullDate(item.ingestedAt)}>

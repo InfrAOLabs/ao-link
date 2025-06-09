@@ -3,6 +3,7 @@ import { connect } from "@/config/ao.Connection"
 import { isArweaveId } from "@/utils/utils"
 
 export const arIoCu = connect({
+  MODE: "legacy",
   CU_URL: "https://cu.ardrive.io",
   MODE: 'legacy'
 })

@@ -34,25 +34,3 @@ jobs:
         run: npm run deploy
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          DEPLOY_ANT_PROCESS_ID: ${{ secrets.DEPLOY_ANT_PROCESS_ID }}
-          DEPLOY_UNDERNAME: ${{ secrets.DEPLOY_UNDERNAME }}
-        run: |
-          if [ -z "$DEPLOY_UNDERNAME" ]; then
-            echo "Error: DEPLOY_UNDERNAME secret is required but not set"
-            echo "Please set the DEPLOY_UNDERNAME secret in your repository settings"
-            echo "If you want to deploy without an undername, use the alternative configuration below"
-            exit 1
-          fi
-          echo "Deploying with undername: $DEPLOY_UNDERNAME"
-          npm run deploy-undername
-
-      # Alternative deployment configuration (commented out):
-      # Use this if you want to deploy directly to the base ArNS without an undername
-      # To use this, comment out the above "Deploy with undername" step and uncomment this one
-      #- name: Deploy without undername
-      #  env:
-      #    DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-      #    DEPLOY_ANT_PROCESS_ID: ${{ secrets.DEPLOY_ANT_PROCESS_ID }}
-      #  run: |
-      #    echo "Deploying without undername to base ArNS"
-      #    npm run deploy

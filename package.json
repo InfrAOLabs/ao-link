@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "predeploy": "rm -rf ./dist-* && npm run build",
-    "deploy": "permaweb-deploy --ant-process My3zjcGNtaOaZntPCLXZjIKAzOqluRRHCIUh9mUzzAo"
+    "deploy": "permaweb-deploy --arns-name infrao --undername aolink"
   },
   "dependencies": {
     "@arweave-wallet-kit/browser-wallet-strategy": "^0.1.1",
